@@ -316,6 +316,9 @@ If C<logger> is omitted, the log is suppressed.
 
 Wrapper methods for corresponding L<Net::Twitter> methods. See L<Net::Twitter> for specification of C<$options_hashref>.
 
+Note that L<Net::Twitter> accepts non-hashref arguments for convenience, but this is not supported by L<Net::Twitter::Loader>.
+You always need to give a hash-ref to these methods.
+
 If C<since_id> is given in C<$options_hashref> or it is loaded from the file specified by C<filepath> option,
 these wrapper methods repeatedly call L<Net::Twitter>'s corresponding methods to load a complete timeline newer than C<since_id>.
 If C<filepath> option is enabled, the latest ID of the loaded status is saved to the file.

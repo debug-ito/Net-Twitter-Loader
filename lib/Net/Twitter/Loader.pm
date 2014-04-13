@@ -340,6 +340,18 @@ Original Twitter API returns other fields such as C<"search_metadata">, but thos
 
 =head1 SEE ALSO
 
+=over
+
+=item *
+
+L<Net::Twitter>
+
+=item *
+
+L<Net::Twitter::Lite>
+
+=back
+
 =head1 REPOSITORY
 
 L<https://github.com/debug-ito/Net-Twitter-Loader>

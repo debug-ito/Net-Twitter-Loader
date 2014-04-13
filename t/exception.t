@@ -5,6 +5,7 @@ use Test::MockObject;
 use lib "t";
 use testlib::Util qw(mock_timeline);
 use Try::Tiny;
+use Net::Twitter::Loader;
 
 note('--- if backend throws an exception, it should be thrown to the user code');
 my $diemock = Test::MockObject->new;

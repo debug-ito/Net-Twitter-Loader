@@ -115,6 +115,7 @@ sub _load_timeline {
         }catch {
             my $e = shift;
             $self->_log("error", $e);
+            die $e;
         };
         return undef if not defined $loaded;
         @$loaded = grep { !$loaded_ids{$_->{id}} } @$loaded;
@@ -122,10 +123,6 @@ sub _load_timeline {
         $loaded_ids{$_->{id}} = 1 foreach @$loaded;
         $max_id = $loaded->[-1]{id};
         $next_since_id = $loaded->[0]{id} if not defined $next_since_id;
-        ## $loaded = $self->{transformer}->($self, $loaded) if defined $self->{transformer};
-        ## if(ref($loaded) ne "ARRAY") {
-        ##     croak("transformer must return array-ref");
-        ## }
         push(@result, @$loaded);
         $load_count++;
         sleep($self->{page_next_delay});

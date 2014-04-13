@@ -1,8 +1,186 @@
 package Net::Twitter::Loader;
 use strict;
 use warnings;
+use JSON qw(decode_json encode_json);
+use Try::Tiny;
+use Carp;
+use Time::HiRes qw(sleep);
 
 our $VERSION = "0.01";
+
+sub new {
+    my ($class, %params) = @_;
+    my $self = bless {}, $class;
+    croak "backend parameter is mandatory" if not defined $params{backend};
+    $self->{backend} = $params{backend};
+    $self->_set_param(\%params, 'filepath', undef);
+    $self->_set_param(\%params, 'page_max', 10);
+    $self->_set_param(\%params, 'page_max_no_since_id', 1);
+    $self->_set_param(\%params, 'page_next_delay', 0);
+    $self->_set_param(\%params, "logger", undef);
+    return $self;
+}
+
+sub _set_param {
+    my ($self, $params_ref, $key, $default) = @_;
+    $self->{$key} = defined($params_ref->{$key}) ? $params_ref->{$key} : $default;
+}
+
+sub _load_next_since_id_file {
+    my ($self) = @_;
+    return {} if not defined($self->{filepath});
+    open my $file, "<", $self->{filepath} or return undef;
+    my $json_text = do { local $/ = undef; <$file> };
+    close $file;
+    my $since_ids = try {
+        decode_json($json_text);
+    }catch {
+        my $e = shift;
+        $self->_log("warn", "failed to decode_json");
+        return {};
+    };
+    $since_ids = {} if not defined $since_ids;
+    return $since_ids;
+}
+
+sub _log {
+    my ($self, $level, $msg) = @_;
+    $self->{logger}->($level, $msg) if defined $self->{logger};
+}
+
+sub _save_next_since_id_file {
+    my ($self, $since_ids) = @_;
+    return if not defined($self->{filepath});
+    open my $file, ">", $self->{filepath} or die "Cannot open $self->{filepath} for write: $!";
+    try {
+        print $file encode_json($since_ids);
+    }catch {
+        my $e = shift;
+        $self->_log("error", $e);
+    };
+    close $file;
+}
+
+sub _log_query {
+    my ($self, $method, $params) = @_;
+    $self->_log("debug", sprintf(
+        "%s: method: %s, args: %s", __PACKAGE__, $method,
+        join(", ", map {"$_: " . (defined($params->{$_}) ? $params->{$_} : "[undef]")} keys %$params)
+    ));
+}
+
+sub _normalize_search_result {
+    my ($self, $nt_result) = @_;
+    if(!ref($nt_result)) {
+        confess "Scalar is returned by the backend. Something is wrong.";
+    }elsif(ref($nt_result) eq 'ARRAY') {
+        return $nt_result;
+    }elsif(ref($nt_result) eq 'HASH') {
+        if(ref($nt_result->{statuses}) eq 'ARRAY') {    ## REST API v1.1
+            return $nt_result->{statuses};
+        }elsif(ref($nt_result->{results}) eq 'ARRAY') { ## REST API v1.0
+            return $nt_result->{results};
+        }
+    }
+    confess "Unknown type of data returned by the backend. Something is wrong.";
+}
+
+sub _load_timeline {
+    my ($self, $nt_params, $method, @label_params) = @_;
+    my %params = defined($nt_params) ? %$nt_params : ();
+    if(not defined $method) {
+        $method = (caller(1))[3];
+        $method =~ s/^.*:://g;
+    }
+    my $label = "$method," .
+        join(",", map { "$_:" . (defined($params{$_}) ? $params{$_} : "") } @label_params);
+    my $since_ids = $self->_load_next_since_id_file();
+    my $since_id = $since_ids->{$label};
+    $params{since_id} = $since_id if !defined($params{since_id}) && defined($since_id);
+    my $page_max = defined($params{since_id}) ? $self->{page_max} : $self->{page_max_no_since_id};
+    if($method eq 'public_timeline') {
+        $page_max = 1;
+    }
+    my $max_id = undef;
+    my @result = ();
+    my $load_count = 0;
+    my %loaded_ids = ();
+    my $next_since_id;
+    while($load_count < $page_max) {
+        $params{max_id} = $max_id if defined $max_id;
+        $self->_log_query($method, \%params);
+        my $loaded;
+        try {
+            $loaded = $self->_normalize_search_result($self->{backend}->$method({%params}));
+        }catch {
+            my $e = shift;
+            $self->_log("error", $e);
+        };
+        return undef if not defined $loaded;
+        @$loaded = grep { !$loaded_ids{$_->{id}} } @$loaded;
+        last if !@$loaded;
+        $loaded_ids{$_->{id}} = 1 foreach @$loaded;
+        $max_id = $loaded->[-1]{id};
+        $next_since_id = $loaded->[0]{id} if not defined $next_since_id;
+        ## $loaded = $self->{transformer}->($self, $loaded) if defined $self->{transformer};
+        ## if(ref($loaded) ne "ARRAY") {
+        ##     croak("transformer must return array-ref");
+        ## }
+        push(@result, @$loaded);
+        $load_count++;
+        sleep($self->{page_next_delay});
+    }
+    if($load_count == $self->{page_max}) {
+        $self->_log("notice", "page has reached the max value of " . $self->{page_max});
+    }
+    if(defined($next_since_id)) {
+        $since_ids = $self->_load_next_since_id_file();
+        $since_ids->{$label} = $next_since_id;
+        $self->_save_next_since_id_file($since_ids);
+    }
+    return \@result;
+}
+
+sub user_timeline {
+    my ($self, $nt_params) = @_;
+    return $self->_load_timeline($nt_params, undef, qw(id user_id screen_name));
+}
+
+sub public_timeline {
+    my ($self, $nt_params) = @_;
+    return $self->_load_timeline($nt_params);
+}
+
+sub home_timeline {
+    my ($self, $nt_params) = @_;
+    return $self->_load_timeline($nt_params);
+}
+
+sub list_statuses {
+    my ($self, $nt_params) = @_;
+    return $self->_load_timeline($nt_params, undef, qw(list_id slug owner_screen_name owner_id));
+}
+
+sub search {
+    my ($self, $nt_params) = @_;
+    return $self->_load_timeline($nt_params, undef, qw(q lang locale));
+}
+
+sub favorites {
+    my ($self, $nt_params) = @_;
+    return $self->_load_timeline($nt_params, undef, qw(id user_id screen_name))
+}
+
+sub mentions {
+    my ($self, $nt_params) = @_;
+    return $self->_load_timeline($nt_params);
+}
+
+sub retweets_of_me {
+    my ($self, $nt_params) = @_;
+    return $self->_load_timeline($nt_params);
+}
+
 
 1;
 __END__
@@ -131,8 +309,6 @@ If C<logger> is omitted, the log is suppressed.
 
 =head2 $status_arrayref = $input->public_statuses($options_hashref)
 
-=head2 $status_arrayref = $input->search($options_hashref)
-
 =head2 $status_arrayref = $input->favorites($options_hashref)
 
 =head2 $status_arrayref = $input->mentions($options_hashref)
@@ -153,6 +329,12 @@ If the operation succeeds, the return value of these methods is an array-ref of 
 
 If something is wrong (e.g. network failure), these methods throw an exception.
 In this case, the error is logged if C<logger> is specified in the constructor.
+
+=head2 $status_arrayref = $input->search($options_hashref)
+
+Same as other timeline methods, but note that it returns only the statuses of the search result.
+
+Original Twitter API returns other fields such as C<"search_metadata">, but those are discarded.
 
 =head1 SEE ALSO
 

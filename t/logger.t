@@ -14,7 +14,7 @@ my $loader = Net::Twitter::Loader->new(
 );
 
 my $statuses = $loader->user_timeline({screen_name => "foo", since_id => 50});
-is_deeply $statuses, statuses(reverse 51 .. 100), "result OK";
+is_deeply $statuses, [statuses(reverse 51 .. 100)], "result OK";
 
 cmp_ok scalar(@logs), ">", 0, "at least 1 message is logged";
 is scalar(grep { @$_ == 2 } @logs), scalar(@logs), "all logs have 2 elems";

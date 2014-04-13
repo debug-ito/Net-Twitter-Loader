@@ -2,6 +2,7 @@
 on 'test' => sub {
     requires 'Test::More' => "0";
     requires 'Test::MockObject' => "0";
+    requires "Try::Tiny" => "0";
 };
 
 on 'configure' => sub {

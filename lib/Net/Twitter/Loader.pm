@@ -150,7 +150,9 @@ if C<since_id> is specified or loaded from the file. The max number is limited t
 if C<since_id> is not specified.
 
 If the operation succeeds, the return value of these methods is an array-ref of unique status objects.
+
 If something is wrong (e.g. network failure), these methods throw an exception.
+In this case, the error is logged if C<logger> is specified in the constructor.
 
 =head1 SEE ALSO
 

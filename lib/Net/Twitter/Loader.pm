@@ -195,7 +195,7 @@ Net::Twitter::Loader - repeat loading Twitter statuses up to a certain point
     use Net::Twitter::Loader;
     use Net::Twitter;
     
-    my $input = Net::Twitter::Loader->new(
+    my $loader = Net::Twitter::Loader->new(
         backend => Net::Twitter->new(
             traits => [qw(OAuth API::RESTv1_1)],
             consumer_key => "YOUR_CONSUMER_KEY_HERE",
@@ -216,17 +216,17 @@ Net::Twitter::Loader - repeat loading Twitter statuses up to a certain point
     );
     
     ## First call to home_timeline
-    my $arrayref_of_statuses = $input->home_timeline();
+    my $arrayref_of_statuses = $loader->home_timeline();
     
     ## The latest loaded status ID is saved to next_since_ids.json
     
     ## Subsequent calls to home_timeline automatically load
     ## all statuses that have not been loaded yet.
-    $arrayref_of_statuses = $input->home_timeline();
+    $arrayref_of_statuses = $loader->home_timeline();
     
     
     ## You can load other timelines as well.
-    $arrayref_of_statuses = $input->user_timeline({screen_name => 'hoge'});
+    $arrayref_of_statuses = $loader->user_timeline({screen_name => 'hoge'});
     
     
     foreach my $status (@$arrayref_of_statuses) {
@@ -258,7 +258,7 @@ so that it can always load all the unread statuses.
 
 =head1 CLASS METHODS
 
-=head2 $input = Net::Twitter::Loader->new(%options);
+=head2 $loader = Net::Twitter::Loader->new(%options);
 
 Creates the object with the following C<%options>.
 
@@ -300,19 +300,19 @@ If C<logger> is omitted, the log is suppressed.
 
 =head1 OBJECT METHODS
 
-=head2 $status_arrayref = $input->home_timeline($options_hashref)
+=head2 $status_arrayref = $loader->home_timeline($options_hashref)
 
-=head2 $status_arrayref = $input->user_timeline($options_hashref)
+=head2 $status_arrayref = $loader->user_timeline($options_hashref)
 
-=head2 $status_arrayref = $input->list_statuses($options_hashref)
+=head2 $status_arrayref = $loader->list_statuses($options_hashref)
 
-=head2 $status_arrayref = $input->public_statuses($options_hashref)
+=head2 $status_arrayref = $loader->public_statuses($options_hashref)
 
-=head2 $status_arrayref = $input->favorites($options_hashref)
+=head2 $status_arrayref = $loader->favorites($options_hashref)
 
-=head2 $status_arrayref = $input->mentions($options_hashref)
+=head2 $status_arrayref = $loader->mentions($options_hashref)
 
-=head2 $status_arrayref = $input->retweets_of_me($options_hashref)
+=head2 $status_arrayref = $loader->retweets_of_me($options_hashref)
 
 Wrapper methods for corresponding L<Net::Twitter> methods. See L<Net::Twitter> for specification of C<$options_hashref>.
 
@@ -332,11 +332,12 @@ If the operation succeeds, the return value of these methods is an array-ref of 
 If something is wrong (e.g. network failure), these methods throw an exception.
 In this case, the error is logged if C<logger> is specified in the constructor.
 
-=head2 $status_arrayref = $input->search($options_hashref)
+=head2 $status_arrayref = $loader->search($options_hashref)
 
 Same as other timeline methods, but note that it returns only the statuses of the search result.
 
 Original Twitter API returns other fields such as C<"search_metadata">, but those are discarded.
+
 
 =head1 SEE ALSO
 

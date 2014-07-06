@@ -23,6 +23,8 @@ sub new {
     return $self;
 }
 
+sub backend { $_[0]->{backend} }
+
 sub _set_param {
     my ($self, $params_ref, $key, $default) = @_;
     $self->{$key} = defined($params_ref->{$key}) ? $params_ref->{$key} : $default;
@@ -338,6 +340,9 @@ Same as other timeline methods, but note that it returns only the statuses of th
 
 Original Twitter API returns other fields such as C<"search_metadata">, but those are discarded.
 
+=head2 $backend = $loader->backend()
+
+Get the backend L<Net::Twitter> or L<Net::Twitter::Loader> object.
 
 =head1 SEE ALSO
 

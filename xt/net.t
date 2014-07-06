@@ -2,6 +2,7 @@ use strict;
 use warnings;
 use Test::More;
 use Test::Builder;
+use Test::Identity;
 use Encode;
 use Time::HiRes;
 use Net::Twitter;
@@ -81,6 +82,7 @@ sub test_backend {
             push(@logs, [$level, $msg]);
         }
     ]);
+    identical $input->backend, $backend, "backend() OK";
 
     my %tests = (
         user_timeline => {

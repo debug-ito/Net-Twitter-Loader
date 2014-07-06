@@ -2,6 +2,7 @@ use strict;
 use warnings;
 use Test::More;
 use Test::MockObject;
+use Test::Identity;
 use lib "t";
 use testlib::Util ":all";
 use Net::Twitter::Loader;
@@ -34,6 +35,7 @@ note('--- iteration by user_timeline');
 my $loader = Net::Twitter::Loader->new(
     backend => $mocknt, page_next_delay => 0, page_max => 500,
 );
+identical $loader->backend, $mocknt, "backend() OK";
 is_deeply(
     $loader->user_timeline({since_id => 10, screen_name => "someone"}),
     [statuses reverse(11 .. 100)],
@@ -86,6 +88,7 @@ end_call $mocknt;
 $loader = Net::Twitter::Loader->new(
     backend => $mocknt, page_next_delay => 0, page_max => 2,
 );
+identical $loader->backend, $mocknt, "backend() OK";
 $mocknt->clear;
 is_deeply(
     $loader->user_timeline({since_id => 5, screen_name => "foo"}),

@@ -6,7 +6,7 @@ use Try::Tiny;
 use Carp;
 use Time::HiRes qw(sleep);
 
-our $VERSION = "0.01";
+our $VERSION = "0.02";
 
 our @CARP_NOT = qw(Try::Tiny Net::Twitter Net::Twitter::Lite Net::Twitter::Lite::WithAPIv1_1);
 

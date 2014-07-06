@@ -54,7 +54,7 @@ sub test_result {
     my ($got_statuses, $label, $method, $exp_min_count) = @_;
     local $Test::Builder::Level = $Test::Builder::Level + 1;
     ok(defined($got_statuses), "$label: $method loaded") or return;
-    cmp_ok(int(@$got_statuses), ">", $exp_min_count, "$label: $method " . int(@$got_statuses) . " statuses loaded.");
+    cmp_ok(int(@$got_statuses), ">=", $exp_min_count, "$label: $method " . int(@$got_statuses) . " statuses loaded.");
     show_statuses($got_statuses);
 }
 

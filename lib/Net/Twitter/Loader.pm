@@ -6,7 +6,7 @@ use Try::Tiny;
 use Carp;
 use Time::HiRes qw(sleep);
 
-our $VERSION = "0.02";
+our $VERSION = "0.03";
 
 our @CARP_NOT = qw(Try::Tiny Net::Twitter Net::Twitter::Lite Net::Twitter::Lite::WithAPIv1_1);
 
@@ -342,7 +342,7 @@ Original Twitter API returns other fields such as C<"search_metadata">, but thos
 
 =head2 $backend = $loader->backend()
 
-Get the backend L<Net::Twitter> or L<Net::Twitter::Loader> object.
+Get the backend L<Net::Twitter> or L<Net::Twitter::Lite> object.
 
 =head1 SEE ALSO
 

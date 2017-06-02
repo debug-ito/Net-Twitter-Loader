@@ -7,7 +7,7 @@ use Encode;
 use Time::HiRes;
 use Net::Twitter;
 use Net::Twitter::Lite::WithAPIv1_1;
-use constant (CONFIG_FILEPATH => 'twitter_loader_test_net_config.pl');
+use constant (CONFIG_FILEPATH => './twitter_loader_test_net_config.pl');
 use constant (SINCE_ID_FILEPATH => 'twitter_loader_test_since_id_file.json');
 use constant (ACCESS_DELAY => 1.0);
 use constant (TEST_USER => "ariyoshihiroiki");
